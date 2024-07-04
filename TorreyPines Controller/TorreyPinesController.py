@@ -24,6 +24,8 @@ class App(Frame):
         self.mainDisplay = Frame(master, relief="sunken", borderwidth= 1, width=500, height=538)
         self.mainDisplay.grid_propagate(False)
         self.mainDisplay.grid(row=0, rowspan=2, column=0, columnspan=1)
+        self.mainDisplayLabel = Label(self.mainDisplay, text="Current State and Information")
+        self.mainDisplayLabel.grid(row=0, column=0)
         
         self.mainSpacer = Frame(master, width=154)
         self.mainSpacer.grid(row=0, rowspan=1, column=1, columnspan=1)
@@ -31,11 +33,37 @@ class App(Frame):
         self.mainControl = Frame(master, relief="raised", borderwidth=1, width=300, height=538)
         self.mainControl.grid_propagate(False)
         self.mainControl.grid(row=0, rowspan=1, column=2, columnspan=1)
-         
-        self.test2 = Entry(self.mainDisplay)
-        self.test2.grid(row=0, column=0)
-        self.test = Entry(self.mainControl)
-        self.test.grid(row=0, column=0)
+        self.mainControlLabel = Label(self.mainControl, text="Controls")
+        self.mainControlLabel.grid(row=0, column=0, columnspan=3)
+
+        #Controls
+        #Temperature Control
+        self.tempControlLabel = Label(self.mainControl, text="Temperature \u2103")
+        self.tempControlLabel.grid(row=1, column=0)
+
+        def tempValidation(value):
+            if str.isdigit(value) and 100>=int(value)>=0:
+                return True
+            elif str(value) == "":
+                return True
+            else:
+                return False
+            
+        validationCommand = self.register(tempValidation)
+
+        self.tempControl = Entry(self.mainControl, width=5)
+        self.tempControl.insert(0, "25")
+        self.tempControl.config(validate="key", validatecommand=(validationCommand, "%P"))
+        self.tempControl.grid(row=1, column=1)
+
+        self.tempControlButton = Button(self.mainControl, text="Set Temp")
+        self.tempControlButton.grid(row=1, column=2)
+        
+        #Idle Control
+        self.idleControl = Button(self.mainControl, text="Idle", width=35)
+        self.idleControl.grid(row=2, column=0, columnspan=3)
+
+
 
 
 root = Tk()    
