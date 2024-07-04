@@ -63,8 +63,22 @@ class App(Frame):
         self.idleControl = Button(self.mainControl, text="Idle", width=35)
         self.idleControl.grid(row=2, column=0, columnspan=3)
 
+        #Display
+        units = 12
+        self.unitList = []
+        self.unitBox = Frame(self.mainDisplay)
+        self.unitBox.grid(row=1, column=0)
+        
+        for unit in range(units):
+            self.itemList = []
+            self.unitList.append(Frame(self.unitBox))
+            self.unitList[unit].pack(side="top")
 
+            for item in range(5):
+                self.itemList.append(Label(self.unitList[unit], text=f"Item {item + unit*5 +1}"))
+                self.itemList[item].grid(row=0, column=item, sticky="W")
 
+            
 
 root = Tk()    
 myapp = App(root)
