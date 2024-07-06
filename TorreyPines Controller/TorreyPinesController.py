@@ -64,19 +64,58 @@ class App(Frame):
         self.idleControl.grid(row=2, column=0, columnspan=3)
 
         #Display
-        units = 12
+        units = 11
         self.unitList = []
-        self.unitBox = Frame(self.mainDisplay)
+        self.unitBox = Canvas(self.mainDisplay, height=300, width=490)
+        self.unitBox.pack_propagate(False)
         self.unitBox.grid(row=1, column=0)
         
+        #Captions
+        self.Captions = Frame(self.unitBox)
+        self.Captions.pack(side="top")
+
+        self.nameCaption = Label(self.Captions, text="Unit Name", width=20, anchor="w")
+        self.nameCaption.grid(row=0, column=0)
+
+        self.currentTempCaption = Label(self.Captions, text="Current Temperature", width=25)
+        self.currentTempCaption.grid(row=0, column=1)
+
+        self.setTempCaption = Label(self.Captions, text="Set Temperature", width = 20)
+        self.setTempCaption.grid(row=0, column=2)
+
+        self.allCheckbox = Checkbutton(self.Captions)
+        self.allCheckbox.grid(row=0, column=3)
+
         for unit in range(units):
             self.itemList = []
             self.unitList.append(Frame(self.unitBox))
             self.unitList[unit].pack(side="top")
 
-            for item in range(5):
-                self.itemList.append(Label(self.unitList[unit], text=f"Item {item + unit*5 +1}"))
-                self.itemList[item].grid(row=0, column=item, sticky="W")
+            #Label is 0 index
+            self.itemList.append(Label(self.unitList[unit], text=f"TorreyPines Unit {unit + 1}", width=20, anchor="w"))
+            self.itemList[0].grid(row=0, column=0)
+
+            #Current Temp is 1 index
+            self.itemList.append(Entry(self.unitList[unit], width = 25))
+            self.itemList[1].insert(0, "25 \u2103")
+            self.itemList[1].config(state="readonly")
+            self.itemList[1].grid(row=0, column=1)
+
+            #Set Temp is 2 index
+            self.itemList.append(Entry(self.unitList[unit], width = 20))
+            self.itemList[2].insert(0, "25 \u2103")
+            self.itemList[2].config(state="readonly")
+            self.itemList[2].grid(row=0, column=2)
+
+            #Checkbox is 3 index
+            self.itemList.append(Checkbutton(self.unitList[unit]))
+            self.itemList[3].grid(row=0, column=3)
+
+        #     # keeping this for POC - we can programatically generate widgets that we can reference through a unit[].control[] method
+        #     # for item in range(5):
+        #     #     self.itemList.append(Label(self.unitList[unit], text=f"Item {item + unit*5 +1}"))
+        #     #     self.itemList[item].grid(row=0, column=item, sticky="W")
+
 
             
 
