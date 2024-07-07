@@ -1,5 +1,9 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import messagebox
+from time import sleep
+import serial
+import serial.tools
+import serial.tools.list_ports
 
 class App(Frame):
     def __init__(self, master):
@@ -9,6 +13,7 @@ class App(Frame):
         self.itemList = []
         units = 11
         self.unitList = []
+        self.checkValList = []
 
         #Menubar Setup
         self.mainMenubar = Menu(master)
@@ -78,12 +83,9 @@ class App(Frame):
         self.checkAll = Button(self.mainControl, text="Select All", width = 15, command=checkboxControlTrue)
         self.checkAll.grid(row=3, column= 0)
 
-
-
         #Deselect All
         self.uncheckAll = Button(self.mainControl, text="Deselect All", width = 15, command=checkboxControlFalse)
         self.uncheckAll.grid(row=3, column= 2)
-
 
         #Display
         self.unitBox = Canvas(self.mainDisplay, height=300, width=490)
@@ -125,7 +127,8 @@ class App(Frame):
             self.itemList[unit][2].grid(row=0, column=2)
 
             #Checkbox is 3 index
-            self.itemList[unit].append(Checkbutton(self.unitList[unit]))
+            self.checkValList.append(IntVar(master,0))
+            self.itemList[unit].append(Checkbutton(self.unitList[unit], variable=self.checkValList[unit]))
             self.itemList[unit][3].grid(row=0, column=3)
             self.itemList[unit][3].config
 
@@ -135,7 +138,53 @@ class App(Frame):
         #     #     self.itemList[unit].append(Label(self.unitList[unit], text=f"Item {item + unit*5 +1}"))
         #     #     self.itemList[unit][item].grid(row=0, column=item, sticky="W")
 
+        def setTemp():
+             for unit in range(units):
+                  if self.checkValList[unit].get() == 1:
+                       #this only changes UI 
+                       self.itemList[unit][2].config(state="normal")
+                       self.itemList[unit][2].delete(0, END)
+                       self.itemList[unit][2].insert(0, f"{self.tempControl.get()} \u2103")
+                       self.itemList[unit][2].config(state="readonly")
+        self.tempControlButton.config(command=setTemp)
 
+        def idle():
+             for unit in range(units):
+                  if self.checkValList[unit].get() == 1:
+                       #this only changes UI 
+                       self.itemList[unit][2].config(state="normal")
+                       self.itemList[unit][2].delete(0, END)
+                       self.itemList[unit][2].insert(0, "IDLE")
+                       self.itemList[unit][2].config(state="readonly")
+        self.idleControl.config(command=idle)
+
+        def updateCurrentTemp():
+             print("hi")
+             master.after(1000, updateCurrentTemp)
+        
+        #master.after(3000, updateCurrentTemp)
+        
+        def on_closing():
+            if messagebox.askokcancel("Quit", "Do you want to quit?"):
+                messagebox.showinfo(title="Shutdown", message="All TorreyPines Units will be set to Idle")
+                for eachCheckbox in self.itemList:
+                    eachCheckbox[3].select()
+                idle()
+                master.destroy()
+        master.protocol("WM_DELETE_WINDOW", on_closing)
+
+# #BACKEND TEST WORKS
+# ser = serial.Serial(port="COM11", baudrate = 9600, parity= "N", stopbits= 1)
+# ser.write(b"v\r")
+# sleep(50)
+
+# data=ser.readline()
+# print(data.decode('UTF-8'))
+# ser.close()
+
+# #list comports
+# for each in serial.tools.list_ports.comports():
+#      print(each)
 
             
 
