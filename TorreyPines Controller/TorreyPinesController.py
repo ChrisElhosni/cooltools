@@ -6,6 +6,9 @@ class App(Frame):
         super().__init__(master)
         master.geometry("960x540")
         master.resizable(False,False)
+        self.itemList = []
+        units = 11
+        self.unitList = []
 
         #Menubar Setup
         self.mainMenubar = Menu(master)
@@ -63,9 +66,26 @@ class App(Frame):
         self.idleControl = Button(self.mainControl, text="Idle", width=35)
         self.idleControl.grid(row=2, column=0, columnspan=3)
 
+        def checkboxControlTrue():
+            for eachCheckbox in self.itemList:
+                    eachCheckbox[3].select()
+
+        def checkboxControlFalse():
+            for eachCheckbox in self.itemList:
+                    eachCheckbox[3].deselect()
+            
+        #Select All
+        self.checkAll = Button(self.mainControl, text="Select All", width = 15, command=checkboxControlTrue)
+        self.checkAll.grid(row=3, column= 0)
+
+
+
+        #Deselect All
+        self.uncheckAll = Button(self.mainControl, text="Deselect All", width = 15, command=checkboxControlFalse)
+        self.uncheckAll.grid(row=3, column= 2)
+
+
         #Display
-        units = 11
-        self.unitList = []
         self.unitBox = Canvas(self.mainDisplay, height=300, width=490)
         self.unitBox.pack_propagate(False)
         self.unitBox.grid(row=1, column=0)
@@ -83,38 +103,38 @@ class App(Frame):
         self.setTempCaption = Label(self.Captions, text="Set Temperature", width = 20)
         self.setTempCaption.grid(row=0, column=2)
 
-        self.allCheckbox = Checkbutton(self.Captions)
-        self.allCheckbox.grid(row=0, column=3)
-
         for unit in range(units):
-            self.itemList = []
+            self.itemList.append([])
             self.unitList.append(Frame(self.unitBox))
             self.unitList[unit].pack(side="top")
 
             #Label is 0 index
-            self.itemList.append(Label(self.unitList[unit], text=f"TorreyPines Unit {unit + 1}", width=20, anchor="w"))
-            self.itemList[0].grid(row=0, column=0)
+            self.itemList[unit].append(Label(self.unitList[unit], text=f"TorreyPines Unit {unit + 1}", width=20, anchor="w"))
+            self.itemList[unit][0].grid(row=0, column=0)
 
             #Current Temp is 1 index
-            self.itemList.append(Entry(self.unitList[unit], width = 25))
-            self.itemList[1].insert(0, "25 \u2103")
-            self.itemList[1].config(state="readonly")
-            self.itemList[1].grid(row=0, column=1)
+            self.itemList[unit].append(Entry(self.unitList[unit], width = 25))
+            self.itemList[unit][1].insert(0, "25 \u2103")
+            self.itemList[unit][1].config(state="readonly")
+            self.itemList[unit][1].grid(row=0, column=1)
 
             #Set Temp is 2 index
-            self.itemList.append(Entry(self.unitList[unit], width = 20))
-            self.itemList[2].insert(0, "25 \u2103")
-            self.itemList[2].config(state="readonly")
-            self.itemList[2].grid(row=0, column=2)
+            self.itemList[unit].append(Entry(self.unitList[unit], width = 20))
+            self.itemList[unit][2].insert(0, "25 \u2103")
+            self.itemList[unit][2].config(state="readonly")
+            self.itemList[unit][2].grid(row=0, column=2)
 
             #Checkbox is 3 index
-            self.itemList.append(Checkbutton(self.unitList[unit]))
-            self.itemList[3].grid(row=0, column=3)
+            self.itemList[unit].append(Checkbutton(self.unitList[unit]))
+            self.itemList[unit][3].grid(row=0, column=3)
+            self.itemList[unit][3].config
 
         #     # keeping this for POC - we can programatically generate widgets that we can reference through a unit[].control[] method
         #     # for item in range(5):
-        #     #     self.itemList.append(Label(self.unitList[unit], text=f"Item {item + unit*5 +1}"))
-        #     #     self.itemList[item].grid(row=0, column=item, sticky="W")
+        #     #     self.itemList.append([])    
+        #     #     self.itemList[unit].append(Label(self.unitList[unit], text=f"Item {item + unit*5 +1}"))
+        #     #     self.itemList[unit][item].grid(row=0, column=item, sticky="W")
+
 
 
             
