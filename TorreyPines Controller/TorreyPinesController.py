@@ -1,9 +1,12 @@
 from tkinter import *
 from tkinter import messagebox
 from time import sleep
+import random
 import serial
 import serial.tools
 import serial.tools.list_ports
+
+#TO COMPILE, I run 'python -m PyInstaller --noconsole --onefile "C:\Users\chris\Desktop\ChrisElhosni\coolTools\TorreyPines Controller\TorreyPinesController.py"'
 
 class App(Frame):
     def __init__(self, master):
@@ -116,13 +119,13 @@ class App(Frame):
 
             #Current Temp is 1 index
             self.itemList[unit].append(Entry(self.unitList[unit], width = 25))
-            self.itemList[unit][1].insert(0, "25 \u2103")
+            self.itemList[unit][1].insert(0, "UNKNOWN")
             self.itemList[unit][1].config(state="readonly")
             self.itemList[unit][1].grid(row=0, column=1)
 
             #Set Temp is 2 index
             self.itemList[unit].append(Entry(self.unitList[unit], width = 20))
-            self.itemList[unit][2].insert(0, "25 \u2103")
+            self.itemList[unit][2].insert(0, "NOT SET")
             self.itemList[unit][2].config(state="readonly")
             self.itemList[unit][2].grid(row=0, column=2)
 
@@ -158,11 +161,21 @@ class App(Frame):
                        self.itemList[unit][2].config(state="readonly")
         self.idleControl.config(command=idle)
 
+        #we make getTempSingle only get temp for a single unit so we can pipe each call as a different background tasks that get added to the event queue (using updateCurrentTemp) once every 3-5 seconds
+        def getTempSingle(unit):
+            #this only changes UI
+            self.itemList[unit][1].config(state="normal")
+            self.itemList[unit][1].delete(0, END)
+            #(TO DO) THESE ARE RANDOM NUMBERS AT THIS POINT
+            self.itemList[unit][1].insert(0, f"{random.uniform(0, 100):.1f} \u2103")
+            self.itemList[unit][1].config(state="readonly")
+
         def updateCurrentTemp():
-             print("hi")
-             master.after(1000, updateCurrentTemp)
-        
-        #master.after(3000, updateCurrentTemp)
+            for unit in range(units):    
+                master.after_idle(getTempSingle, unit)
+            master.after(5000, updateCurrentTemp)
+        #(TO DO) Move this to after connections are made
+        master.after(1000, updateCurrentTemp)
         
         def on_closing():
             if messagebox.askokcancel("Quit", "Do you want to quit?"):
