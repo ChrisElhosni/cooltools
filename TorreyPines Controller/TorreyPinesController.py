@@ -6,6 +6,8 @@ import serial
 import serial.tools
 import serial.tools.list_ports
 
+#TO COMPILE, I run 'python -m PyInstaller --noconsole --onefile "C:\Users\chris\Desktop\ChrisElhosni\coolTools\TorreyPines Controller\TorreyPinesController.py"'
+
 class App(Frame):
     def __init__(self, master):
         super().__init__(master)
