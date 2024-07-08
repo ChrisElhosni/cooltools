@@ -1,3 +1,4 @@
+#Check if any of this is really needed, other than tkinter * and serial
 from tkinter import *
 from tkinter import messagebox
 from time import sleep
@@ -5,6 +6,7 @@ import random
 import serial
 import serial.tools
 import serial.tools.list_ports
+import re
 
 #TO COMPILE, I run 'python -m PyInstaller --noconsole --onefile "C:\Users\chris\Desktop\ChrisElhosni\coolTools\TorreyPines Controller\TorreyPinesController.py"'
 
@@ -13,10 +15,12 @@ class App(Frame):
         super().__init__(master)
         master.geometry("960x540")
         master.resizable(False,False)
+        master.title("TorreyPines Control v0.1")
         self.itemList = []
         units = 11
         self.unitList = []
         self.checkValList = []
+        self.serialConnections = []
 
         #Menubar Setup
         self.mainMenubar = Menu(master)
@@ -58,6 +62,7 @@ class App(Frame):
             elif str(value) == "":
                 return True
             else:
+                messagebox.showinfo(title="Exceeded Temperature Limits", message="The minimum set temperature is 0\u2103 and the maximum set temperature is 100\u2103")
                 return False
             
         validationCommand = self.register(tempValidation)
@@ -73,6 +78,10 @@ class App(Frame):
         #Idle Control
         self.idleControl = Button(self.mainControl, text="Idle", width=35)
         self.idleControl.grid(row=2, column=0, columnspan=3)
+
+        #Test Button
+        self.testButton = Button(self.mainControl, text="Test", width = 35)
+        self.testButton.grid(row=4, column=0, columnspan=3)
 
         def checkboxControlTrue():
             for eachCheckbox in self.itemList:
@@ -174,7 +183,7 @@ class App(Frame):
             for unit in range(units):    
                 master.after_idle(getTempSingle, unit)
             master.after(5000, updateCurrentTemp)
-        #(TO DO) Move this to after connections are made
+        #(TO DO) Move the master.after call to after connections are made
         master.after(1000, updateCurrentTemp)
         
         def on_closing():
@@ -184,10 +193,47 @@ class App(Frame):
                     eachCheckbox[3].select()
                 idle()
                 master.destroy()
-        master.protocol("WM_DELETE_WINDOW", on_closing)
+        #(TO DO) Re enable the close alert
+        #master.protocol("WM_DELETE_WINDOW", on_closing)
+
+        #detect units uses the serial tools listports function to grab a list of listPortInfo objects and translate them into an list of serial connections ordered by port#
+        def detectUnits() -> list:
+            self.serialConnections.clear()
+            comPortList = serial.tools.list_ports.comports()
+            messageOut = ""
+
+            #Detect units, then validate device name
+            if len(comPortList) == 0:
+                messagebox.showinfo(title="Detect Units", message="No COM Ports detected")
+                return []
+            else:
+                for comPortUnit in comPortList:
+                    foundPort = re.search(r"\bCOM\d+", comPortUnit.device)
+                    if foundPort != None:
+                        self.serialConnections.append(serial.Serial(port=foundPort.group(), baudrate= 9600, parity= "N", stopbits= 1, timeout=0.5))
+            
+            #sort connections
+            self.serialConnections.sort(key= lambda a : re.search(r"(?<=COM)\d+", a).group())
+
+            #validate connection
+            for connection in self.serialConnections:
+                #send command for get SN of TP unit
+                connection.write(b"V\r")
+                response = connection.readline().decode("UTF-8")
+
+                #If response is not a string of 8 numbers (a SN), close the connection and remove it from the serialConnections list
+                if re.search(r"\d{8}", response) != None:
+                    messageOut += f"SN: {response} is connected to {connection.port}\n"
+                else:
+                    connection.close()
+                    self.serialConnections.remove(connection)
+            messagebox.showinfo(title="TorreyPines Units detected", message=messageOut)
+
+            return self.serialConnections
+        self.testButton.config(command=detectUnits)
 
 # #BACKEND TEST WORKS
-# ser = serial.Serial(port="COM11", baudrate = 9600, parity= "N", stopbits= 1)
+#ser = serial.Serial(port="COM11", baudrate = 9600, parity= "N", stopbits= 1)
 # ser.write(b"v\r")
 # sleep(50)
 
