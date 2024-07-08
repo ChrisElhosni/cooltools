@@ -28,11 +28,12 @@ class App(Frame):
         self.helpMenu = Menu(self.mainMenubar, tearoff=0)
         self.viewMenu = Menu(self.mainMenubar, tearoff=0)
         self.configMenu = Menu(self.mainMenubar, tearoff=0)
+        self.configMenu.add_command(label="Detect and Connect")
         self.mainMenubar.add_cascade(label="File", menu=self.fileMenu)
         self.mainMenubar.add_cascade(label="View", menu=self.viewMenu)
         self.mainMenubar.add_cascade(label="Configuration", menu=self.configMenu)
         self.mainMenubar.add_cascade(label="Help", menu=self.helpMenu)
-        
+
         master.config(menu=self.mainMenubar)
 
         #Display Setup
@@ -149,63 +150,19 @@ class App(Frame):
         #     #     self.itemList.append([])    
         #     #     self.itemList[unit].append(Label(self.unitList[unit], text=f"Item {item + unit*5 +1}"))
         #     #     self.itemList[unit][item].grid(row=0, column=item, sticky="W")
-
-        def setTemp():
-             for unit in range(units):
-                  if self.checkValList[unit].get() == 1:
-                       #this only changes UI 
-                       self.itemList[unit][2].config(state="normal")
-                       self.itemList[unit][2].delete(0, END)
-                       self.itemList[unit][2].insert(0, f"{self.tempControl.get()} \u2103")
-                       self.itemList[unit][2].config(state="readonly")
-        self.tempControlButton.config(command=setTemp)
-
-        def idle():
-             for unit in range(units):
-                  if self.checkValList[unit].get() == 1:
-                       #this only changes UI 
-                       self.itemList[unit][2].config(state="normal")
-                       self.itemList[unit][2].delete(0, END)
-                       self.itemList[unit][2].insert(0, "IDLE")
-                       self.itemList[unit][2].config(state="readonly")
-        self.idleControl.config(command=idle)
-
-        #we make getTempSingle only get temp for a single unit so we can pipe each call as a different background tasks that get added to the event queue (using updateCurrentTemp) once every 3-5 seconds
-        def getTempSingle(unit):
-            #this only changes UI
-            self.itemList[unit][1].config(state="normal")
-            self.itemList[unit][1].delete(0, END)
-            #(TO DO) THESE ARE RANDOM NUMBERS AT THIS POINT
-            self.itemList[unit][1].insert(0, f"{random.uniform(0, 100):.1f} \u2103")
-            self.itemList[unit][1].config(state="readonly")
-
-        def updateCurrentTemp():
-            for unit in range(units):    
-                master.after_idle(getTempSingle, unit)
-            master.after(5000, updateCurrentTemp)
-        #(TO DO) Move the master.after call to after connections are made
-        master.after(1000, updateCurrentTemp)
         
-        def on_closing():
-            if messagebox.askokcancel("Quit", "Do you want to quit?"):
-                messagebox.showinfo(title="Shutdown", message="All TorreyPines Units will be set to Idle")
-                for eachCheckbox in self.itemList:
-                    eachCheckbox[3].select()
-                idle()
-                master.destroy()
-        #(TO DO) Re enable the close alert
-        #master.protocol("WM_DELETE_WINDOW", on_closing)
-
+        #eventually, we'll have this set up at the top, and itll determine how many units to build for front end stuff, so we dont run into "index out of range" errors when we try and call our commands
         #detect units uses the serial tools listports function to grab a list of listPortInfo objects and translate them into an list of serial connections ordered by port#
         def detectUnits() -> list:
             self.serialConnections.clear()
-            comPortList = serial.tools.list_ports.comports()
             messageOut = ""
+
+            comPortList = serial.tools.list_ports.comports()
 
             #Detect units, then validate device name
             if len(comPortList) == 0:
                 messagebox.showinfo(title="Detect Units", message="No COM Ports detected")
-                return []
+                return
             else:
                 for comPortUnit in comPortList:
                     foundPort = re.search(r"\bCOM\d+", comPortUnit.device)
@@ -227,10 +184,78 @@ class App(Frame):
                 else:
                     connection.close()
                     self.serialConnections.remove(connection)
-            messagebox.showinfo(title="TorreyPines Units detected", message=messageOut)
+            messagebox.showinfo(title="Detect Units", message=messageOut)
+        self.configMenu.entryconfigure(0, command=detectUnits)
+        
+        def setTemp():
+            temperature = self.tempControl.get()
+            for unit in range(units):
+                if self.checkValList[unit].get() == 1:
+                    #write set temp to unit
+                    self.serialConnections[unit].write(bytes(f"n{temperature}\r"))
+                    
+                    #ask for set temp for unit, should return a number
+                    self.serialConnections[unit].write(b"s\r")
 
-            return self.serialConnections
-        self.testButton.config(command=detectUnits)
+                    self.itemList[unit][2].config(state="normal")
+                    self.itemList[unit][2].delete(0, END)
+                    self.itemList[unit][2].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")} \u2103")
+                    self.itemList[unit][2].config(state="readonly")
+        self.tempControlButton.config(command=setTemp)
+
+        def idle():
+            for unit in range(units):
+                if self.checkValList[unit].get() == 1:
+                    #write idle to unit
+                    self.serialConnections[unit].write(bytes(f"i\r"))
+
+                    #ask for set temp for unit, should return off
+                    self.serialConnections[unit].write(b"s\r")
+
+                    self.itemList[unit][2].config(state="normal")
+                    self.itemList[unit][2].delete(0, END)
+                    self.itemList[unit][2].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")}")
+                    self.itemList[unit][2].config(state="readonly")
+        self.idleControl.config(command=idle)
+
+        #we make getTempSingle only get temp for a single unit so we can pipe each call as a different background tasks that get added to the event queue (using updateCurrentTemp) once every 3-5 seconds
+        def getTempSingle(unit):
+
+            self.serialConnections[unit].write(bytes(f"p\r"))
+
+            #this only changes UI
+            self.itemList[unit][1].config(state="normal")
+            self.itemList[unit][1].delete(0, END)
+            self.itemList[unit][1].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")} \u2103")
+            #Random number option
+            #self.itemList[unit][1].insert(0, f"{random.uniform(0, 100):.1f} \u2103")
+            self.itemList[unit][1].config(state="readonly")
+
+        def updateCurrentTemp():
+            for unit in range(units):    
+                master.after_idle(getTempSingle, unit)
+            master.after(5000, updateCurrentTemp)
+        #(TO DO) Reenable and Move the master.after call to after connections are made
+        #master.after(1000, updateCurrentTemp)
+        
+        def on_closing():
+            if messagebox.askokcancel("Quit", "Do you want to quit?"):
+                #(TO DO) Re enable the close alert
+                #messagebox.showinfo(title="Shutdown", message="All TorreyPines Units will be set to Idle")
+                for eachCheckbox in self.itemList:
+                    eachCheckbox[3].select()
+                #(TO DO) Re enable idle
+                #idle()
+                for connection in self.serialConnections:
+                    connection.close
+                master.destroy()
+        master.protocol("WM_DELETE_WINDOW", on_closing)
+
+
+
+
+        #Test Button Tie
+        #self.testButton.config(command=detectUnits)
 
 # #BACKEND TEST WORKS
 #ser = serial.Serial(port="COM11", baudrate = 9600, parity= "N", stopbits= 1)
