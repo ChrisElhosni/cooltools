@@ -192,14 +192,18 @@ class App(Frame):
             for unit in range(units):
                 if self.checkValList[unit].get() == 1:
                     #write set temp to unit
-                    self.serialConnections[unit].write(bytes(f"n{temperature}\r"))
+                    #turn off for demo
+                    #self.serialConnections[unit].write(bytes(f"n{temperature}\r"))
                     
                     #ask for set temp for unit, should return a number
-                    self.serialConnections[unit].write(b"s\r")
+                    #turn off for demo
+                    #self.serialConnections[unit].write(b"s\r")
 
                     self.itemList[unit][2].config(state="normal")
                     self.itemList[unit][2].delete(0, END)
-                    self.itemList[unit][2].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")} \u2103")
+                    #turn off for demo
+                    #self.itemList[unit][2].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")} \u2103")
+                    self.itemList[unit][2].insert(0, f"{temperature} \u2103")
                     self.itemList[unit][2].config(state="readonly")
         self.tempControlButton.config(command=setTemp)
 
@@ -207,28 +211,33 @@ class App(Frame):
             for unit in range(units):
                 if self.checkValList[unit].get() == 1:
                     #write idle to unit
-                    self.serialConnections[unit].write(bytes(f"i\r"))
+                    #turn off for demo
+                    #self.serialConnections[unit].write(bytes(f"i\r"))
 
                     #ask for set temp for unit, should return off
-                    self.serialConnections[unit].write(b"s\r")
+                    #turn off for demo
+                    #self.serialConnections[unit].write(b"s\r")
 
                     self.itemList[unit][2].config(state="normal")
                     self.itemList[unit][2].delete(0, END)
-                    self.itemList[unit][2].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")}")
+                    #turn off for demo
+                    #self.itemList[unit][2].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")}")
+                    self.itemList[unit][2].insert(0, "IDLE")
                     self.itemList[unit][2].config(state="readonly")
         self.idleControl.config(command=idle)
 
         #we make getTempSingle only get temp for a single unit so we can pipe each call as a different background tasks that get added to the event queue (using updateCurrentTemp) once every 3-5 seconds
         def getTempSingle(unit):
-
-            self.serialConnections[unit].write(bytes(f"p\r"))
+            #turn off for demo
+            # self.serialConnections[unit].write(bytes(f"p\r"))
 
             #this only changes UI
             self.itemList[unit][1].config(state="normal")
             self.itemList[unit][1].delete(0, END)
-            self.itemList[unit][1].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")} \u2103")
+            #turn off for demo
+            #self.itemList[unit][1].insert(0, f"{self.serialConnections[unit].readline().decode("UTF-8")} \u2103")
             #Random number option
-            #self.itemList[unit][1].insert(0, f"{random.uniform(0, 100):.1f} \u2103")
+            self.itemList[unit][1].insert(0, f"{random.uniform(0, 100):.1f} \u2103")
             self.itemList[unit][1].config(state="readonly")
 
         def updateCurrentTemp():
@@ -236,12 +245,12 @@ class App(Frame):
                 master.after_idle(getTempSingle, unit)
             master.after(5000, updateCurrentTemp)
         #(TO DO) Reenable and Move the master.after call to after connections are made
-        #master.after(1000, updateCurrentTemp)
+        master.after(1000, updateCurrentTemp)
         
         def on_closing():
             if messagebox.askokcancel("Quit", "Do you want to quit?"):
                 #(TO DO) Re enable the close alert
-                #messagebox.showinfo(title="Shutdown", message="All TorreyPines Units will be set to Idle")
+                messagebox.showinfo(title="Shutdown", message="All TorreyPines Units will be set to Idle")
                 for eachCheckbox in self.itemList:
                     eachCheckbox[3].select()
                 #(TO DO) Re enable idle
